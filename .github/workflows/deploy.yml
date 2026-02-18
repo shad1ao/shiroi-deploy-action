@@ -103,17 +103,34 @@ jobs:
         run: |
           cat > /tmp/patch_jsx.js << 'SCRIPT'
           const fs = require("fs");
-          const file = "packages/types/tsdown.config.ts";
-          if (!fs.existsSync(file)) { console.log("tsdown.config.ts not found, skipping"); process.exit(0); }
-          let content = fs.readFileSync(file, "utf8");
-          console.log("=== Original tsdown.config.ts ===");
-          console.log(content);
-          if (content.includes("jsx")) { console.log("jsx already configured, skipping"); process.exit(0); }
-          // 在每个 entry 字段前插入 jsx: 'react-jsx'，适配单对象和数组格式
-          content = content.replace(/^(\s*)(entry\b)/gm, "$1jsx: 'react-jsx',\n$1$2");
-          fs.writeFileSync(file, content);
-          console.log("=== Patched tsdown.config.ts ===");
-          console.log(content);
+
+          // 1. 补丁 tsdown.config.ts: jsx 值用 'automatic'（oxc/rolldown 格式）
+          const tsdownFile = "packages/types/tsdown.config.ts";
+          if (fs.existsSync(tsdownFile)) {
+            let content = fs.readFileSync(tsdownFile, "utf8");
+            console.log("=== Original tsdown.config.ts ===");
+            console.log(content);
+            if (!content.includes("jsx")) {
+              content = content.replace(/^(\s*)(entry\b)/gm, "$1jsx: 'automatic',\n$1$2");
+              fs.writeFileSync(tsdownFile, content);
+              console.log("=== Patched tsdown.config.ts ===");
+              console.log(content);
+            }
+          }
+
+          // 2. 补丁 packages/types/tsconfig.json: 确保 compilerOptions.jsx = react-jsx
+          const tsconfigFile = "packages/types/tsconfig.json";
+          if (fs.existsSync(tsconfigFile)) {
+            const raw = fs.readFileSync(tsconfigFile, "utf8");
+            console.log("=== Original tsconfig.json ===");
+            console.log(raw);
+            const config = JSON.parse(raw);
+            config.compilerOptions = config.compilerOptions || {};
+            config.compilerOptions.jsx = "react-jsx";
+            fs.writeFileSync(tsconfigFile, JSON.stringify(config, null, 2));
+            console.log("=== Patched tsconfig.json ===");
+            console.log(JSON.stringify(config, null, 2));
+          }
           SCRIPT
           node /tmp/patch_jsx.js
       - name: Download build shell
