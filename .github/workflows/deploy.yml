@@ -97,14 +97,21 @@ jobs:
           node-version: ${{ matrix.node-version }}
           cache: 'pnpm'
       - uses: jongwooo/next-cache@v1
-      - name: Install dependencies
-        run: pnpm install --no-frozen-lockfile
-      - name: Install tailwindcss CLI globally
-        run: npm install -g tailwindcss@4
-      - name: Patch shiro-types build for JSX support
+      - name: Patch shiro-types build for JSX and tailwindcss
         run: |
           # 修改 tsconfig.json: "jsx": "preserve" → "react-jsx"
           sed -i 's/"jsx": "preserve"/"jsx": "react-jsx"/' packages/types/tsconfig.json
+
+          # 添加 tailwindcss 为 packages/types 的 devDependency，
+          # 这样 pnpm install 会把 tailwindcss 放到该包的 .bin 里
+          node -e "
+            const fs = require('fs');
+            const f = 'packages/types/package.json';
+            const pkg = JSON.parse(fs.readFileSync(f, 'utf8'));
+            pkg.devDependencies.tailwindcss = '4';
+            fs.writeFileSync(f, JSON.stringify(pkg, null, 2));
+            console.log('Added tailwindcss to devDependencies');
+          "
 
           # 重写 tsdown.config.ts：添加 rolldown 插件用 TypeScript 预转译 JSX
           cat > packages/types/tsdown.config.ts << 'TSDOWN_CONFIG'
@@ -158,6 +165,8 @@ jobs:
           TSDOWN_CONFIG
           echo "=== New tsdown.config.ts ==="
           cat packages/types/tsdown.config.ts
+      - name: Install dependencies
+        run: pnpm install --no-frozen-lockfile
       - name: Download build shell
         run: |
           wget https://r2.ikundog.eu.org/ci-release-build.sh
