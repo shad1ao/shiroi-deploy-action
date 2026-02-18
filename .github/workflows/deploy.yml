@@ -99,17 +99,20 @@ jobs:
       - uses: jongwooo/next-cache@v1
       - name: Install dependencies
         run: pnpm install
-      - name: Patch tsdown config for JSX support
+      - name: Patch JSX config for shiro-types build
         run: |
+          # 核心修复：tsconfig.json 的 "jsx": "preserve" 阻止了 JSX 转译
+          sed -i 's/"jsx": "preserve"/"jsx": "react-jsx"/' packages/types/tsconfig.json
+          echo "=== Patched tsconfig.json ==="
+          cat packages/types/tsconfig.json
+
+          # 备用：在 tsdown 配置中也添加 inputOptions.transform.jsx
           cat > /tmp/patch_jsx.js << 'SCRIPT'
           const fs = require("fs");
           const file = "packages/types/tsdown.config.ts";
-          if (!fs.existsSync(file)) { console.log("tsdown.config.ts not found, skipping"); process.exit(0); }
+          if (!fs.existsSync(file)) { process.exit(0); }
           let content = fs.readFileSync(file, "utf8");
-          console.log("=== Original tsdown.config.ts ===");
-          console.log(content);
-          if (content.includes("inputOptions")) { console.log("inputOptions already present, skipping"); process.exit(0); }
-          // 根据 tsdown 文档，JSX 需要通过 inputOptions.transform.jsx 配置
+          if (content.includes("inputOptions")) { process.exit(0); }
           content = content.replace(
             /^(\s*)(entry\b)/gm,
             "$1inputOptions: { transform: { jsx: 'react-jsx' } },\n$1$2"
