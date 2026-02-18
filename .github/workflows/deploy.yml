@@ -106,8 +106,9 @@ jobs:
           echo "=== tsconfig.json jsx setting ==="
           grep -n "jsx" packages/types/tsconfig.json || true
 
-          # 修复 tailwindcss 命令找不到的问题
-          sed -i 's|&& tailwindcss |&& ./node_modules/.bin/tailwindcss |' packages/types/package.json
+          # 把 apps/web 的 node_modules/.bin 加入 PATH，确保 tailwindcss 命令可用
+          echo "$PWD/apps/web/node_modules/.bin" >> $GITHUB_PATH
+          export PATH="$PWD/apps/web/node_modules/.bin:$PATH"
 
           # 重写 tsdown.config.ts：添加 rolldown 插件用 TypeScript 预转译 JSX
           cat > packages/types/tsdown.config.ts << 'TSDOWN_CONFIG'
