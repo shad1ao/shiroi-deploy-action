@@ -98,30 +98,66 @@ jobs:
           cache: 'pnpm'
       - uses: jongwooo/next-cache@v1
       - name: Install dependencies
-        run: pnpm install
-      - name: Patch JSX config for shiro-types build
+        run: pnpm install --no-frozen-lockfile
+      - name: Patch shiro-types build for JSX support
         run: |
-          # 核心修复：tsconfig.json 的 "jsx": "preserve" 阻止了 JSX 转译
+          # 修改 tsconfig.json: "jsx": "preserve" → "react-jsx"
           sed -i 's/"jsx": "preserve"/"jsx": "react-jsx"/' packages/types/tsconfig.json
-          echo "=== Patched tsconfig.json ==="
-          cat packages/types/tsconfig.json
+          echo "=== tsconfig.json jsx setting ==="
+          grep -n "jsx" packages/types/tsconfig.json || true
 
-          # 备用：在 tsdown 配置中也添加 inputOptions.transform.jsx
-          cat > /tmp/patch_jsx.js << 'SCRIPT'
-          const fs = require("fs");
-          const file = "packages/types/tsdown.config.ts";
-          if (!fs.existsSync(file)) { process.exit(0); }
-          let content = fs.readFileSync(file, "utf8");
-          if (content.includes("inputOptions")) { process.exit(0); }
-          content = content.replace(
-            /^(\s*)(entry\b)/gm,
-            "$1inputOptions: { transform: { jsx: 'react-jsx' } },\n$1$2"
-          );
-          fs.writeFileSync(file, content);
-          console.log("=== Patched tsdown.config.ts ===");
-          console.log(content);
-          SCRIPT
-          node /tmp/patch_jsx.js
+          # 重写 tsdown.config.ts：添加 rolldown 插件用 TypeScript 预转译 JSX
+          cat > packages/types/tsdown.config.ts << 'TSDOWN_CONFIG'
+          import { createRequire } from 'module'
+          import { defineConfig } from 'tsdown'
+
+          const require = createRequire(import.meta.url)
+          const ts = require('typescript')
+
+          const jsxPlugin = {
+            name: 'jsx-transform',
+            transform(code, id) {
+              if (id.endsWith('.tsx')) {
+                const result = ts.transpileModule(code, {
+                  compilerOptions: {
+                    jsx: 4,
+                    module: 99,
+                    target: 9,
+                    esModuleInterop: true,
+                    allowJs: true,
+                  },
+                  fileName: id,
+                })
+                return { code: result.outputText }
+              }
+            },
+          }
+
+          export default defineConfig(() => [
+            {
+              entry: ['./index.ts'],
+              outDir: 'dist',
+              format: ['es'],
+              clean: true,
+              dts: true,
+              sourcemap: true,
+              plugins: [jsxPlugin],
+            },
+            {
+              entry: ['./sandbox.ts'],
+              outDir: 'dist',
+              format: ['es'],
+              clean: true,
+              dts: true,
+              sourcemap: true,
+              treeshake: true,
+              external: ['react', 'react-dom', 'motion'],
+              plugins: [jsxPlugin],
+            },
+          ])
+          TSDOWN_CONFIG
+          echo "=== New tsdown.config.ts ==="
+          cat packages/types/tsdown.config.ts
       - name: Download build shell
         run: |
           wget https://r2.ikundog.eu.org/ci-release-build.sh
