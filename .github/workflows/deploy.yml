@@ -99,6 +99,9 @@ jobs:
       - uses: jongwooo/next-cache@v1
       - name: Install dependencies
         run: pnpm install
+      - name: Download build shell
+        run: |
+          wget https://r2.ikundog.eu.org/ci-release-build.sh
       - name: Build project
         run: |
           sh ./ci-release-build.sh
