@@ -99,6 +99,15 @@ jobs:
       - uses: jongwooo/next-cache@v1
       - name: Install dependencies
         run: pnpm install
+      - name: Patch tsdown config for JSX support
+        run: |
+          # Fix: tsdown/rolldown 不会自动转译 .tsx 中的 JSX 语法
+          if [ -f packages/types/tsdown.config.ts ]; then
+            sed -i "s/defineConfig({/defineConfig({ jsx: 'react-jsx',/" packages/types/tsdown.config.ts
+            sed -i "s/defineConfig(\[{/defineConfig([{ jsx: 'react-jsx',/" packages/types/tsdown.config.ts
+            echo "=== Patched tsdown.config.ts ==="
+            cat packages/types/tsdown.config.ts
+          fi
       - name: Download build shell
         run: |
           wget https://r2.ikundog.eu.org/ci-release-build.sh
