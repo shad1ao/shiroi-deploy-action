@@ -108,9 +108,9 @@ jobs:
             const fs = require('fs');
             const f = 'packages/types/package.json';
             const pkg = JSON.parse(fs.readFileSync(f, 'utf8'));
-            pkg.devDependencies.tailwindcss = '4';
+            pkg.devDependencies['@tailwindcss/cli'] = '4';
             fs.writeFileSync(f, JSON.stringify(pkg, null, 2));
-            console.log('Added tailwindcss to devDependencies');
+            console.log('Added @tailwindcss/cli to devDependencies');
           "
 
           # 重写 tsdown.config.ts：添加 rolldown 插件用 TypeScript 预转译 JSX
