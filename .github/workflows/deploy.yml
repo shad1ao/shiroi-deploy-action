@@ -103,33 +103,20 @@ jobs:
         run: |
           cat > /tmp/patch_jsx.js << 'SCRIPT'
           const fs = require("fs");
-
-          // 1. 补丁 tsdown.config.ts: 添加 jsx: 'automatic'
-          const tsdownFile = "packages/types/tsdown.config.ts";
-          if (fs.existsSync(tsdownFile)) {
-            let content = fs.readFileSync(tsdownFile, "utf8");
-            console.log("=== Original tsdown.config.ts ===");
-            console.log(content);
-            if (!content.includes("jsx")) {
-              content = content.replace(/^(\s*)(entry\b)/gm, "$1jsx: 'automatic',\n$1$2");
-              fs.writeFileSync(tsdownFile, content);
-              console.log("=== Patched tsdown.config.ts ===");
-              console.log(content);
-            }
-          }
-
-          // 2. 补丁 tsconfig.json: 将 "jsx": "preserve" 改为 "jsx": "react-jsx"
-          //    tsconfig 有尾逗号，不能用 JSON.parse，用字符串替换
-          const tsconfigFile = "packages/types/tsconfig.json";
-          if (fs.existsSync(tsconfigFile)) {
-            let raw = fs.readFileSync(tsconfigFile, "utf8");
-            console.log("=== Original tsconfig.json ===");
-            console.log(raw);
-            raw = raw.replace(/"jsx"\s*:\s*"preserve"/, '"jsx": "react-jsx"');
-            fs.writeFileSync(tsconfigFile, raw);
-            console.log("=== Patched tsconfig.json ===");
-            console.log(raw);
-          }
+          const file = "packages/types/tsdown.config.ts";
+          if (!fs.existsSync(file)) { console.log("tsdown.config.ts not found, skipping"); process.exit(0); }
+          let content = fs.readFileSync(file, "utf8");
+          console.log("=== Original tsdown.config.ts ===");
+          console.log(content);
+          if (content.includes("inputOptions")) { console.log("inputOptions already present, skipping"); process.exit(0); }
+          // 根据 tsdown 文档，JSX 需要通过 inputOptions.transform.jsx 配置
+          content = content.replace(
+            /^(\s*)(entry\b)/gm,
+            "$1inputOptions: { transform: { jsx: 'react-jsx' } },\n$1$2"
+          );
+          fs.writeFileSync(file, content);
+          console.log("=== Patched tsdown.config.ts ===");
+          console.log(content);
           SCRIPT
           node /tmp/patch_jsx.js
       - name: Download build shell
