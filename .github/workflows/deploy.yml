@@ -101,13 +101,21 @@ jobs:
         run: pnpm install
       - name: Patch tsdown config for JSX support
         run: |
-          # Fix: tsdown/rolldown 不会自动转译 .tsx 中的 JSX 语法
-          if [ -f packages/types/tsdown.config.ts ]; then
-            sed -i "s/defineConfig({/defineConfig({ jsx: 'react-jsx',/" packages/types/tsdown.config.ts
-            sed -i "s/defineConfig(\[{/defineConfig([{ jsx: 'react-jsx',/" packages/types/tsdown.config.ts
-            echo "=== Patched tsdown.config.ts ==="
-            cat packages/types/tsdown.config.ts
-          fi
+          cat > /tmp/patch_jsx.js << 'SCRIPT'
+          const fs = require("fs");
+          const file = "packages/types/tsdown.config.ts";
+          if (!fs.existsSync(file)) { console.log("tsdown.config.ts not found, skipping"); process.exit(0); }
+          let content = fs.readFileSync(file, "utf8");
+          console.log("=== Original tsdown.config.ts ===");
+          console.log(content);
+          if (content.includes("jsx")) { console.log("jsx already configured, skipping"); process.exit(0); }
+          // 在每个 entry 字段前插入 jsx: 'react-jsx'，适配单对象和数组格式
+          content = content.replace(/^(\s*)(entry\b)/gm, "$1jsx: 'react-jsx',\n$1$2");
+          fs.writeFileSync(file, content);
+          console.log("=== Patched tsdown.config.ts ===");
+          console.log(content);
+          SCRIPT
+          node /tmp/patch_jsx.js
       - name: Download build shell
         run: |
           wget https://r2.ikundog.eu.org/ci-release-build.sh
