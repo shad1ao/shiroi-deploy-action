@@ -104,8 +104,7 @@ jobs:
           # 修改 tsconfig.json: "jsx": "preserve" → "react-jsx"
           sed -i 's/"jsx": "preserve"/"jsx": "react-jsx"/' packages/types/tsconfig.json
 
-          # 修复 tailwindcss 路径：pnpm 只把当前包的 bin 加入 PATH，
-          # 但 tailwindcss 装在 apps/web 里，cd 过去后用相对路径调用
+          # 修复 tailwindcss：pnpm 严格隔离导致 bin 不在 PATH，用 npx 查找
           node -e "
             const fs = require('fs');
             const f = 'packages/types/package.json';
@@ -113,7 +112,7 @@ jobs:
             console.log('Original build:', pkg.scripts.build);
             pkg.scripts.build = pkg.scripts.build.replace(
               /\btailwindcss\b/g,
-              './node_modules/.bin/tailwindcss'
+              'npx --yes tailwindcss'
             );
             fs.writeFileSync(f, JSON.stringify(pkg, null, 2));
             console.log('Patched build:', pkg.scripts.build);
