@@ -103,12 +103,21 @@ jobs:
         run: |
           # 修改 tsconfig.json: "jsx": "preserve" → "react-jsx"
           sed -i 's/"jsx": "preserve"/"jsx": "react-jsx"/' packages/types/tsconfig.json
-          echo "=== tsconfig.json jsx setting ==="
-          grep -n "jsx" packages/types/tsconfig.json || true
 
-          # 把 apps/web 的 node_modules/.bin 加入 PATH，确保 tailwindcss 命令可用
-          echo "$PWD/apps/web/node_modules/.bin" >> $GITHUB_PATH
-          export PATH="$PWD/apps/web/node_modules/.bin:$PATH"
+          # 修复 tailwindcss 路径：pnpm 只把当前包的 bin 加入 PATH，
+          # 但 tailwindcss 装在 apps/web 里，cd 过去后用相对路径调用
+          node -e "
+            const fs = require('fs');
+            const f = 'packages/types/package.json';
+            const pkg = JSON.parse(fs.readFileSync(f, 'utf8'));
+            console.log('Original build:', pkg.scripts.build);
+            pkg.scripts.build = pkg.scripts.build.replace(
+              /\btailwindcss\b/g,
+              './node_modules/.bin/tailwindcss'
+            );
+            fs.writeFileSync(f, JSON.stringify(pkg, null, 2));
+            console.log('Patched build:', pkg.scripts.build);
+          "
 
           # 重写 tsdown.config.ts：添加 rolldown 插件用 TypeScript 预转译 JSX
           cat > packages/types/tsdown.config.ts << 'TSDOWN_CONFIG'
