@@ -203,6 +203,8 @@ jobs:
             ],
           }
           ECOSYSTEM
+          # 修复：monorepo standalone 中 server.js 在 apps/web/ 下
+          sed -i 's|>>server.js|>>apps/web/server.js|' ci-release-build.sh
           # 修复：.env.template 可能也不存在，cp 失败时跳过
           sed -i 's#cp $CWD/.env.template .env#cp $CWD/.env.template .env 2>/dev/null || true#' ci-release-build.sh
           echo "=== Patched ci-release-build.sh ==="
@@ -293,7 +295,7 @@ jobs:
             fi
             # https://github.com/Unitech/pm2/issues/3054
             # symlink workdir node entry file to basedir
-            ln -sf $workdir/standalone/server.js $basedir/server.js
+            ln -sf $workdir/standalone/apps/web/server.js $basedir/server.js
             mkdir -p $workdir/standalone/.next
             rm -rf $workdir/standalone/.next/cache
             ln -sf $basedir/.cache $workdir/standalone/.next/cache
