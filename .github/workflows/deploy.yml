@@ -181,6 +181,10 @@ jobs:
           wget https://r2.ikundog.eu.org/ci-release-build.sh
           # 修复 monorepo 路径：.next 在 apps/web/ 下
           sed -i 's|cd .next|cd apps/web/.next|' ci-release-build.sh
+          # 调试：构建后打印 .next 目录结构
+          sed -i '/cd apps\/web\/.next/a echo "=== .next directory structure ===" \&\& find . -maxdepth 4 -type d | head -40' ci-release-build.sh
+          echo "=== Patched ci-release-build.sh ==="
+          cat ci-release-build.sh
       - name: Build project
         run: |
           sh ./ci-release-build.sh
