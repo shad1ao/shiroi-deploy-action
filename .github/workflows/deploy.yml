@@ -204,7 +204,7 @@ jobs:
           }
           ECOSYSTEM
           # 修复：.env.template 可能也不存在，cp 失败时跳过
-          sed -i 's|cp $CWD/.env.template .env|cp $CWD/.env.template .env 2>/dev/null || true|' ci-release-build.sh
+          sed -i 's#cp $CWD/.env.template .env#cp $CWD/.env.template .env 2>/dev/null || true#' ci-release-build.sh
           echo "=== Patched ci-release-build.sh ==="
           cat ci-release-build.sh
       - name: Build project
