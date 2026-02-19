@@ -179,6 +179,8 @@ jobs:
       - name: Download build shell
         run: |
           wget https://r2.ikundog.eu.org/ci-release-build.sh
+          # 修复 monorepo 路径：.next 在 apps/web/ 下
+          sed -i 's|cd .next|cd apps/web/.next|' ci-release-build.sh
       - name: Build project
         run: |
           sh ./ci-release-build.sh
