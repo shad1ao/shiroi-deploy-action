@@ -183,6 +183,28 @@ jobs:
           sed -i 's|cd .next|cd apps/web/.next|' ci-release-build.sh
           # 修复：standalone/.next 目录可能不存在，mv 前先创建
           sed -i 's|mv ../static/ ./.next/static|mkdir -p ./.next \&\& mv ../static/ ./.next/static|' ci-release-build.sh
+          # 修复：ecosystem.standalone.config.js 已从源码删除，生成 PM2 配置文件
+          cat > ecosystem.standalone.config.js << 'ECOSYSTEM'
+          module.exports = {
+            apps: [
+              {
+                name: 'shiro',
+                script: 'server.js',
+                autorestart: true,
+                watch: false,
+                max_memory_restart: '500M',
+                env: {
+                  PORT: 2323,
+                  NODE_ENV: 'production',
+                  NEXT_SHARP_PATH: process.env.NEXT_SHARP_PATH,
+                },
+                log_date_format: 'YYYY-MM-DD HH:mm:ss',
+              },
+            ],
+          }
+          ECOSYSTEM
+          # 修复：.env.template 可能也不存在，cp 失败时跳过
+          sed -i 's|cp $CWD/.env.template .env|cp $CWD/.env.template .env 2>/dev/null || true|' ci-release-build.sh
           echo "=== Patched ci-release-build.sh ==="
           cat ci-release-build.sh
       - name: Build project
