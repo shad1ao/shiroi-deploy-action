@@ -317,9 +317,13 @@ jobs:
             # https://github.com/Unitech/pm2/issues/3054
             # symlink workdir node entry file to basedir
             ln -sf $workdir/standalone/apps/web/server.js $basedir/server.js
-            mkdir -p $workdir/standalone/.next
-            rm -rf $workdir/standalone/.next/cache
-            ln -sf $basedir/.cache $workdir/standalone/.next/cache
+            # static files are at standalone/.next/static/ but server.js expects them
+            # at standalone/apps/web/.next/static/ (relative to __dirname)
+            mkdir -p $workdir/standalone/apps/web/.next
+            ln -sf $workdir/standalone/.next/static $workdir/standalone/apps/web/.next/static
+            # same for cache: link to where server.js expects it
+            rm -rf $workdir/standalone/apps/web/.next/cache
+            ln -sf $basedir/.cache $workdir/standalone/apps/web/.next/cache
             cd $basedir
             pm2 reload ecosystem.config.js --update-env
             rm $workdir/release.zip
