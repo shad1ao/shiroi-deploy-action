@@ -185,6 +185,28 @@ jobs:
           sed -i 's|mv ../static/ ./.next/static|mkdir -p ./.next \&\& mv ../static/ ./.next/static|' ci-release-build.sh
           # 修复：ecosystem.standalone.config.js 已从源码删除，生成 PM2 配置文件
           cat > ecosystem.standalone.config.js << 'ECOSYSTEM'
+          const fs = require('fs')
+          const path = require('path')
+
+          function loadEnvFile(filePath) {
+            try {
+              const content = fs.readFileSync(filePath, 'utf8')
+              const envVars = {}
+              content.split('\n').forEach(line => {
+                line = line.trim()
+                if (!line || line.startsWith('#')) return
+                const idx = line.indexOf('=')
+                if (idx === -1) return
+                const key = line.slice(0, idx).trim()
+                const val = line.slice(idx + 1).trim()
+                envVars[key] = val
+              })
+              return envVars
+            } catch { return {} }
+          }
+
+          const dotenvVars = loadEnvFile(path.join(__dirname, '.env'))
+
           module.exports = {
             apps: [
               {
@@ -197,6 +219,7 @@ jobs:
                   PORT: 2323,
                   NODE_ENV: 'production',
                   NEXT_SHARP_PATH: process.env.NEXT_SHARP_PATH,
+                  ...dotenvVars,
                 },
                 log_date_format: 'YYYY-MM-DD HH:mm:ss',
               },
@@ -289,10 +312,8 @@ jobs:
             rm -rf $workdir/standalone/.env
             ln -s $HOME/shiro/.env $workdir/standalone/.env
             export NEXT_SHARP_PATH=$(npm root -g)/sharp
-            # copy workdir ecosystem.config.js to basedir if not exists
-            if [ ! -f $basedir/ecosystem.config.js ]; then
-              cp $workdir/standalone/ecosystem.config.js $basedir/ecosystem.config.js
-            fi
+            # always update ecosystem.config.js to ensure .env loading
+            cp $workdir/standalone/ecosystem.config.js $basedir/ecosystem.config.js
             # https://github.com/Unitech/pm2/issues/3054
             # symlink workdir node entry file to basedir
             ln -sf $workdir/standalone/apps/web/server.js $basedir/server.js
