@@ -172,7 +172,7 @@ jobs:
           node -e "
             const fs = require('fs');
             const pkg = JSON.parse(fs.readFileSync('package.json', 'utf8'));
-            pkg.scripts.build = 'turbo build --filter=!@shiro/rich-editor-demo';
+            pkg.scripts.build = 'turbo build --filter=!@haklex/rich-editor-demo';
             fs.writeFileSync('package.json', JSON.stringify(pkg, null, 2));
             console.log('Build script:', pkg.scripts.build);
           "
