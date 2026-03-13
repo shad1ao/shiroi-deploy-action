@@ -183,24 +183,7 @@ jobs:
               if [ -f $workdir/standalone/ecosystem.config.js ]; then
                 cp $workdir/standalone/ecosystem.config.js $basedir/ecosystem.config.js
               else
-                cat > $basedir/ecosystem.config.js << 'EOFCONFIG'
-module.exports = {
-  apps: [
-    {
-      name: 'Shiroi',
-      script: 'server.js',
-      instances: 1,
-      autorestart: true,
-      watch: false,
-      max_memory_restart: '180M',
-      env: {
-        NODE_ENV: 'production',
-      },
-      log_date_format: 'YYYY-MM-DD HH:mm:ss',
-    },
-  ],
-}
-EOFCONFIG
+                printf "module.exports = {\n  apps: [\n    {\n      name: 'Shiroi',\n      script: 'server.js',\n      instances: 1,\n      autorestart: true,\n      watch: false,\n      max_memory_restart: '180M',\n      env: {\n        NODE_ENV: 'production',\n      },\n      log_date_format: 'YYYY-MM-DD HH:mm:ss',\n    },\n  ],\n}\n" > $basedir/ecosystem.config.js
               fi
             fi
             # https://github.com/Unitech/pm2/issues/3054
