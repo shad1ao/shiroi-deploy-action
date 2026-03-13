@@ -182,6 +182,10 @@ jobs:
             if [ ! -f $basedir/ecosystem.config.js ]; then
               cp $workdir/standalone/ecosystem.config.js $basedir/ecosystem.config.js
             fi
+            # copy workdir ecosystem.config.js to basedir if not exists
+            if [ ! -f $basedir/ecosystem.config.js ]; then
+              cp $workdir/standalone/ecosystem.config.js $basedir/ecosystem.config.js
+            fi
             # https://github.com/Unitech/pm2/issues/3054
             # symlink workdir node entry file to basedir
             ln -sf $workdir/standalone/server.js $basedir/server.js
