@@ -152,6 +152,9 @@ jobs:
       #   with:
       #     name: dist
 
+      - name: Checkout deploy repo
+        uses: actions/checkout@v4
+
       - name: Restore cached Build Artifacts
         id: cache-primes-restore
         uses: actions/cache/restore@v4
