@@ -168,27 +168,21 @@ jobs:
       - name: Prepare standalone PM2 config
         run: cp pm2/ecosystem.config.js ecosystem.config.js
 
-      - name: copy file via ssh password
+      - name: copy files via ssh
         uses: appleboy/scp-action@v0.1.7
+        timeout-minutes: 30
         with:
           host: ${{ secrets.HOST }}
           username: ${{ secrets.USER }}
           password: ${{ secrets.PASSWORD }}
           key: ${{ secrets.KEY }}
           port: ${{ secrets.PORT }}
-          source: 'release.zip'
+          source: 'release.zip,ecosystem.config.js'
           target: '/tmp/yohaku'
-
-      - name: copy PM2 config via ssh password
-        uses: appleboy/scp-action@v0.1.7
-        with:
-          host: ${{ secrets.HOST }}
-          username: ${{ secrets.USER }}
-          password: ${{ secrets.PASSWORD }}
-          key: ${{ secrets.KEY }}
-          port: ${{ secrets.PORT }}
-          source: 'ecosystem.config.js'
-          target: '/tmp/yohaku'
+          rm: true
+          overwrite: true
+          timeout: 60s
+          command_timeout: 30m
 
       - name: Exec deploy script with SSH
         uses: appleboy/ssh-action@master
